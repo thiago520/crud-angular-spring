@@ -1,64 +1,58 @@
 package com.thiago.controller;
 
-import com.thiago.model.Course;
-import com.thiago.repository.CourseRepository;
-import lombok.AllArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
-
+import com.thiago.dto.CourseDTO;
+import com.thiago.dto.CoursePageDTO;
+import com.thiago.service.CourseService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import java.util.List;
+import jakarta.validation.constraints.PositiveOrZero;
+import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
 
 @Validated
 @RestController
 @RequestMapping("/api/courses")
-@AllArgsConstructor
 public class CourseController {
 
-    private final CourseRepository courseRepository;
+    private final CourseService courseService;
 
-    @GetMapping
-    public List<Course> list() {
-        return courseRepository.findAll();
+    public CourseController(CourseService courseService) {
+        this.courseService = courseService;
     }
 
+    @GetMapping
+    public CoursePageDTO list(@RequestParam(defaultValue = "0") @PositiveOrZero int page,
+                              @RequestParam(defaultValue = "10") @Positive @Max(100) int pageSize) {
+        return courseService.list(page, pageSize);
+    }
+
+ /*   @GetMapping
+    public List<CourseDTO> list() {
+        return courseService.list();
+    }*/
+
     @GetMapping("/{id}")
-    public ResponseEntity<Course> findById(@PathVariable @NotNull @Positive Long id) {
-        return courseRepository.findById(id)
-                .map(recordFound -> ResponseEntity.ok().body(recordFound))
-                .orElse(ResponseEntity.notFound().build());
+    public CourseDTO findById(@PathVariable @NotNull @Positive Long id) {
+        return courseService.findById(id);
     }
 
     @PostMapping
     @ResponseStatus(code = HttpStatus.CREATED)
-    public Course create(@RequestBody @Valid Course course) {
-        //return ResponseEntity.status(HttpStatus.CREATED).body(courseRepository.save(course));
-        return courseRepository.save(course);
+    public CourseDTO create(@RequestBody @Valid CourseDTO course) {
+        return courseService.create(course);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Course> update(@PathVariable @NotNull @Positive Long id, @RequestBody @Valid Course course) {
-        return courseRepository.findById(id)
-                .map(recordFound -> {
-                    recordFound.setName(course.getName());
-                    recordFound.setCategory(course.getCategory());
-                    Course updated = courseRepository.save(recordFound);
-                    return ResponseEntity.ok().body(updated);
-                })
-                .orElse(ResponseEntity.notFound().build());
+    public CourseDTO update(@PathVariable @NotNull @Positive Long id, @RequestBody @Valid @NotNull CourseDTO course) {
+        return courseService.update(id, course);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable @NotNull @Positive Long id) {
-        return courseRepository.findById(id)
-                .map(recordFound -> {
-                    courseRepository.deleteById(id);
-                    return ResponseEntity.noContent().<Void>build();
-                })
-                .orElse(ResponseEntity.notFound().build());
+    @ResponseStatus(code = HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable @NotNull @Positive Long id) {
+        courseService.delete(id);
     }
 }
