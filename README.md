@@ -75,9 +75,6 @@ Form with One to Many (Course-Lessons)
 
 View Page with Youtube Player
 
-<p align="center">
-  <img src="./docs/view.jpeg" alt="View Page" width="100%">
-</p>
 
 ## ❗️Executing the code locally
 
