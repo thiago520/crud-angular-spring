@@ -1,19 +1,20 @@
-import { Component, Inject, OnInit } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose } from '@angular/material/dialog';
+import { CommonModule } from '@angular/common';
+import { Component, Inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 
 @Component({
-    selector: 'app-error-dialog',
-    templateUrl: './error-dialog.component.html',
-    styleUrls: ['./error-dialog.component.scss'],
-    standalone: true,
-    imports: [MatDialogTitle, MatDialogContent, MatDialogActions, MatButtonModule, MatDialogClose]
+  selector: 'app-error-dialog',
+  standalone: true,
+  imports: [CommonModule, MatDialogModule, MatButtonModule],
+  template: `
+    <h1 mat-dialog-title style="color: red;">Error!</h1>
+    <div mat-dialog-content>{{ data }}</div>
+    <div mat-dialog-actions align="center">
+      <button mat-stroked-button mat-dialog-close>Close</button>
+    </div>
+  `
 })
-export class ErrorDialogComponent implements OnInit {
-
-  constructor(@Inject(MAT_DIALOG_DATA) public data: string) {}
-
-  ngOnInit(): void {
-  }
-
+export class ErrorDialogComponent {
+  constructor(@Inject(MAT_DIALOG_DATA) public data: string) { }
 }

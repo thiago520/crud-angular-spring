@@ -1,68 +1,75 @@
-import { Location } from '@angular/common';
+import { Location, NgFor, NgIf } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { FormGroup, NonNullableFormBuilder, UntypedFormArray, Validators, ReactiveFormsModule } from '@angular/forms';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import {
+  FormGroup,
+  NonNullableFormBuilder,
+  ReactiveFormsModule,
+  UntypedFormArray,
+  Validators
+} from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatOptionModule } from '@angular/material/core';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatToolbarModule } from '@angular/material/toolbar';
 import { ActivatedRoute } from '@angular/router';
 
 import { Course } from '../../model/course';
-import { CoursesService } from '../../services/courses.service';
 import { Lesson } from '../../model/lesson';
-import { FormUtilsService } from 'src/app/shared/form/form-utils.service';
-import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
-import { MatOptionModule } from '@angular/material/core';
-import { MatSelectModule } from '@angular/material/select';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatCardModule } from '@angular/material/card';
+import { CoursesService } from '../../services/courses.service';
+import { ErrorDialogComponent } from './../../../shared/components/error-dialog/error-dialog.component';
+import { FormUtilsService } from './../../../shared/services/form-utils.service';
 
 @Component({
-    selector: 'app-course-form',
-    templateUrl: './course-form.component.html',
-    styleUrls: ['./course-form.component.scss'],
-    standalone: true,
-    imports: [MatCardModule, MatToolbarModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatOptionModule, MatButtonModule, MatIconModule]
+  selector: 'app-course-form',
+  templateUrl: './course-form.component.html',
+  styleUrls: ['./course-form.component.scss'],
+  standalone: true,
+  imports: [
+    MatCardModule,
+    MatToolbarModule,
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    NgIf,
+    MatSelectModule,
+    MatOptionModule,
+    MatButtonModule,
+    MatIconModule,
+    MatSnackBarModule,
+    MatDialogModule,
+    NgFor
+  ]
 })
-
 export class CourseFormComponent implements OnInit {
-
   form!: FormGroup;
 
-  /* form = this.formBuilder.group({
-    _id: [''],
-    name: ['', [Validators.required,
-               Validators.minLength(5),
-               Validators.maxLength(100)]],
-    category: ['', Validators.required]
-  });
- */
-  constructor(private formBuilder: NonNullableFormBuilder,
+  constructor(
+    private formBuilder: NonNullableFormBuilder,
     private service: CoursesService,
     private snackBar: MatSnackBar,
+    private dialog: MatDialog,
     private location: Location,
     private route: ActivatedRoute,
-    public formUtils: FormUtilsService) {
-
-  }
-
+    public formUtils: FormUtilsService
+  ) { }
 
   ngOnInit(): void {
     const course: Course = this.route.snapshot.data['course'];
     this.form = this.formBuilder.group({
       _id: [course._id],
-      name: [course.name, [Validators.required,
-                 Validators.minLength(5),
-                 Validators.maxLength(100)]],
-      category: [course.category, Validators.required],
+      name: [
+        course.name,
+        [Validators.required, Validators.minLength(5), Validators.maxLength(100)]
+      ],
+      category: [course.category, [Validators.required]],
       lessons: this.formBuilder.array(this.retrieveLessons(course), Validators.required)
     });
-
-    /* this.form.setValue( {
-      _id: course._id,
-      name: course.name,
-      category: course.category
-    }) */
   }
 
   private retrieveLessons(course: Course) {
@@ -75,23 +82,38 @@ export class CourseFormComponent implements OnInit {
     return lessons;
   }
 
-  private createLesson(lesson: Lesson = {id: '', name: '', youtubeUrl: ''}) {
+  private createLesson(lesson: Lesson = { _id: '', name: '', youtubeUrl: '' }) {
     return this.formBuilder.group({
-      id: [lesson.id],
-      name: [lesson.name, [Validators.required,
-        Validators.minLength(5),
-        Validators.maxLength(100)]],
-      youtubeUrl: [lesson.youtubeUrl, [Validators.required,
-        Validators.minLength(10),
-        Validators.maxLength(11)]]
+      _id: [lesson._id],
+      name: [
+        lesson.name,
+        [Validators.required, Validators.minLength(5), Validators.maxLength(100)]
+      ],
+      youtubeUrl: [
+        lesson.youtubeUrl,
+        [Validators.required, Validators.minLength(10), Validators.maxLength(11)]
+      ]
     });
   }
 
-  getLessonsFormArray() {
+  getLessonFormArray() {
     return (<UntypedFormArray>this.form.get('lessons')).controls;
   }
 
-  addNewLesson() {
+  getErrorMessage(fieldName: string): string {
+    return this.formUtils.getFieldErrorMessage(this.form, fieldName);
+  }
+
+  getLessonErrorMessage(fieldName: string, index: number) {
+    return this.formUtils.getFieldFormArrayErrorMessage(
+      this.form,
+      'lessons',
+      fieldName,
+      index
+    );
+  }
+
+  addLesson(): void {
     const lessons = this.form.get('lessons') as UntypedFormArray;
     lessons.push(this.createLesson());
   }
@@ -99,13 +121,14 @@ export class CourseFormComponent implements OnInit {
   removeLesson(index: number) {
     const lessons = this.form.get('lessons') as UntypedFormArray;
     lessons.removeAt(index);
-
   }
 
   onSubmit() {
     if (this.form.valid) {
-      this.service.save(this.form.value)
-        .subscribe(result => this.onSucess(), error => this.onError());
+      this.service.save(this.form.value as Course).subscribe({
+        next: () => this.onSuccess(),
+        error: () => this.onError()
+      });
     } else {
       this.formUtils.validateAllFormFields(this.form);
     }
@@ -115,13 +138,14 @@ export class CourseFormComponent implements OnInit {
     this.location.back();
   }
 
-  private onSucess() {
-    this.snackBar.open('Curso salvo com sucesso!', '', { duration: 5000 });
+  private onSuccess() {
+    this.snackBar.open('Course saved successfully!', '', { duration: 5000 });
     this.onCancel();
   }
 
   private onError() {
-    this.snackBar.open('Erro ao salvar curso.', '', { duration: 5000 });
+    this.dialog.open(ErrorDialogComponent, {
+      data: 'Error saving course.'
+    });
   }
-
 }
